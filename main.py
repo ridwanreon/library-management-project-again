@@ -50,10 +50,10 @@ user_dependency = Annotated[dict,Depends(get_current_user)]
 
 
 @app.get('/books/all')
-def get_all_books(user: user_dependency,  db: db_dependency):
+def get_all_books( db: db_dependency):
     
-    if user is None:
-        raise HTTPException(status_code=401,detail='Failed Authentication')
+    # if user is None:
+    #     raise HTTPException(status_code=401,detail='Failed Authentication')
     
     books = db.query(Books).all()
     return books
