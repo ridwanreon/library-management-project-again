@@ -138,3 +138,19 @@ def change_password(user: user_dependency, db: db_dependency, updatepassword: Up
     db.commit()
     
     return JSONResponse(status_code=200, content={'message':'Password change successfully'})
+
+
+@router.get('/userdetails')
+def user_details(user: user_dependency, db: db_dependency):
+    if user is None:
+        raise HTTPException(status_code=404, detail='Failed Authentication')
+    
+    current_user = db.query(Users).filter(Users.id == user.get('user_id')).first()
+    
+    return {
+        'id' : current_user.id,
+        'email' : current_user.email,
+        'first_name' : current_user.firstname,
+        'last_name' : current_user.lastname,
+        'role' : current_user.role
+    }
