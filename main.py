@@ -82,7 +82,7 @@ def reserve_book(user: user_dependency, db: db_dependency, book__id : int):
     
     reservation_model = Reservations(
         book_id = book__id,
-        user_id = user.get('id'),
+        user_id = user.get('user_id'),
         status = 'pending'
     )
     db.add(reservation_model)
