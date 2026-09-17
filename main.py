@@ -71,24 +71,41 @@ def get_specific_book(user: user_dependency, db: db_dependency, book_id: int):
     return book
 
 @app.post('/reserve/{book__id}')
-def reserve_book(user: user_dependency, db: db_dependency, book__id : int):
+def reserve_book(user: user_dependency, db: db_dependency, book__id: int):
     if user is None:
-        raise HTTPException(status_code=401,detail='Failed Authentication')
+        raise HTTPException(status_code=401, detail='Failed Authentication')
     
     book = db.query(Books).filter(Books.id == book__id).first()
     
     if book is None:
-        raise HTTPException(status_code=404,detail='Book not found')
+        raise HTTPException(status_code=404, detail='Book not found')
+    
+    # Check already reserved
+    existing_reservation = db.query(Reservations).filter(
+        Reservations.book_id == book__id,
+        Reservations.user_id == user.get('user_id'),
+        Reservations.status == 'pending'
+    ).first()
+
+    if existing_reservation:
+        raise HTTPException(
+            status_code=400,
+            detail='You have already reserved this book'
+        )
     
     reservation_model = Reservations(
-        book_id = book__id,
-        user_id = user.get('user_id'),
-        status = 'pending'
+        book_id=book__id,
+        user_id=user.get('user_id'),
+        status='pending'
     )
+
     db.add(reservation_model)
     db.commit()
     
-    return JSONResponse(status_code=201,content={'message':'Book reserved successfully'})
+    return JSONResponse(
+        status_code=201,
+        content={'message': 'Book reserved successfully'}
+    )
 
 @app.put('/reserve/cancel/{reservation_id}')
 def cancel_reservation(user: user_dependency, db:db_dependency,reservation_id: int):
