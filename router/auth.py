@@ -149,6 +149,7 @@ def user_details(user: user_dependency, db: db_dependency):
     
     return {
         'id' : current_user.id,
+        'username': current_user.username,
         'email' : current_user.email,
         'first_name' : current_user.firstname,
         'last_name' : current_user.lastname,
