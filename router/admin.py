@@ -134,24 +134,28 @@ def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueB
         status = 'issued'
     )
     
-    book.available_copies -= 1
+    
     
     reservation = db.query(Reservations).filter(
         Reservations.book_id == issue_request.book_id,
         Reservations.user_id == issue_request.user_id,
-        Reservations.status == 'pending'
     ).first()
     
-    if reservation is not None:
+    if reservation is None:
+        return JSONResponse(status_code=400, content={'message':'User must reserve the book before issuing'})
+
+    
+    if reservation is not None and reservation.status == 'pending':
         reservation.status = 'approved'
-        
+        book.available_copies -= 1
         db.add(issue_model)
         db.commit()
         return JSONResponse(status_code=201, content={'message':'Book issued successfully'})
-    else:
-            raise HTTPException(status_code=400,detail="User must reserve the book before issuing")
-        
-        
+    
+    if reservation is not None and reservation.status == 'approved':
+            return JSONResponse(status_code=400, content={'message':'Already issued'})
+    
+         
 
 @router.put('/admin/return_book/{issue_id}')
 def create_issue(user: user_dependency, db: db_dependency, issue_id : int):
