@@ -147,8 +147,9 @@ def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueB
         
         db.add(issue_model)
         db.commit()
-        
-    return JSONResponse(status_code=201, content={'message':'Book issued successfully'})
+        return JSONResponse(status_code=201, content={'message':'Book issued successfully'})
+    else:
+            raise HTTPException(status_code=400,detail="User must reserve the book before issuing")
         
         
 
