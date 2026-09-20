@@ -123,7 +123,7 @@ def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueB
         raise HTTPException(status_code=400,detail='No copies available')
     
     loan_days = 14
-    issue_date = datetime.now
+    issue_date = datetime.now()
     
     
     issue_model = IssueRecords(
@@ -140,7 +140,7 @@ def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueB
         Reservations.book_id == issue_request.book_id,
         Reservations.user_id == issue_request.user_id,
         Reservations.status == 'pending'
-    )
+    ).first()
     
     if reservation is not None:
         reservation.status = 'approved'
