@@ -112,7 +112,7 @@ def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueB
     
     book = db.query(Books).filter(Books.id == issue_request.book_id).first()
     if book is None:
-        raise HTTPException(status_code=404, detail='Book not found')
+        raise HTTPException(status_code=404, detail='Not reserved')
     
     
     member = db.query(Users).filter(Users.id == issue_request.user_id).first()
