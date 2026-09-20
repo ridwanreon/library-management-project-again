@@ -112,28 +112,12 @@ def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueB
     
     book = db.query(Books).filter(Books.id == issue_request.book_id).first()
     if book is None:
-        raise HTTPException(status_code=404, detail='Not reserved')
+        raise HTTPException(status_code=404, detail='Book not found')
     
     
     member = db.query(Users).filter(Users.id == issue_request.user_id).first()
     if member is None:
-        raise HTTPException(status_code=404,detail='Member not found')
-    
-    if book.available_copies <=0:
-        raise HTTPException(status_code=400,detail='No copies available')
-    
-    loan_days = 14
-    issue_date = datetime.now()
-    
-    
-    issue_model = IssueRecords(
-        book_id = issue_request.book_id,
-        user_id = issue_request.user_id,
-        issue_date = issue_date,
-        due_date = issue_date + timedelta(days=loan_days),
-        status = 'issued'
-    )
-    
+        raise HTTPException(status_code=404, detail='Member not found')
     
     
     reservation = db.query(Reservations).filter(
@@ -142,19 +126,46 @@ def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueB
     ).first()
     
     if reservation is None:
-        return JSONResponse(status_code=400, content={'message':'User must reserve the book before issuing'})
-
+        return JSONResponse(
+            status_code=400,
+            content={'message': 'User must reserve the book before issuing'}
+        )
     
-    if reservation is not None and reservation.status == 'pending':
+    
+    if reservation.status == 'approved':
+        return JSONResponse(
+            status_code=400,
+            content={'message': 'Already issued'}
+        )
+    
+    
+    if book.available_copies <= 0:
+        raise HTTPException(status_code=400, detail='No copies available')
+    
+    
+    loan_days = 14
+    issue_date = datetime.now()
+    
+    
+    issue_model = IssueRecords(
+        book_id=issue_request.book_id,
+        user_id=issue_request.user_id,
+        issue_date=issue_date,
+        due_date=issue_date + timedelta(days=loan_days),
+        status='issued'
+    )
+    
+    
+    if reservation.status == 'pending':
         reservation.status = 'approved'
         book.available_copies -= 1
         db.add(issue_model)
         db.commit()
-        return JSONResponse(status_code=201, content={'message':'Book issued successfully'})
-    
-    if reservation is not None and reservation.status == 'approved':
-            return JSONResponse(status_code=400, content={'message':'Already issued'})
-    
+        
+        return JSONResponse(
+            status_code=201,
+            content={'message': 'Book issued successfully'}
+        )
          
 
 @router.put('/admin/return_book/{issue_id}')
