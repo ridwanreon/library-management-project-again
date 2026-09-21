@@ -105,74 +105,56 @@ def delete_book(user: user_dependency,db:db_dependency,book_id:int):
     return JSONResponse(status_code=201, content={'message':'Book deleted successfully'})
 
 @router.post('/admin/create_issue')
-def create_issue(
-    user: user_dependency,
-    db: db_dependency,
-    issue_request: IssueBook
-):
-    # Check librarian
+def create_issue(user: user_dependency, db: db_dependency, issue_request: IssueBook):
     if user is None or user.get('role') != 'librarian':
-        raise HTTPException(
-            status_code=401,
-            detail='Failed Authentication'
-        )
-
-    # Check book
-    book = db.query(Books).filter(
-        Books.id == issue_request.book_id
-    ).first()
-
+        raise HTTPException(status_code=401, detail='Failed Authentication')
+    
+    
+    book = db.query(Books).filter(Books.id == issue_request.book_id).first()
     if book is None:
-        raise HTTPException(
-            status_code=404,
-            detail='Book not found'
-        )
-
-    # Check member
-    member = db.query(Users).filter(
-        Users.id == issue_request.user_id
-    ).first()
-
+        raise HTTPException(status_code=404, detail='Book not found')
+    
+    
+    member = db.query(Users).filter(Users.id == issue_request.user_id).first()
     if member is None:
-        raise HTTPException(
-            status_code=404,
-            detail='Member not found'
-        )
-
-    # Check reservation
+        raise HTTPException(status_code=404, detail='Member not found')
+    
+    
     reservation = db.query(Reservations).filter(
         Reservations.book_id == issue_request.book_id,
-        Reservations.user_id == issue_request.user_id
+        Reservations.user_id == issue_request.user_id,
     ).first()
-
+    
+    
     if reservation is None:
         return JSONResponse(
             status_code=400,
-            content={
-                'message': 'User must reserve the book before issuing'
-            }
+            content={'message': 'User must reserve the book before issuing'}
         )
-
-    # Already issued
+    
+    
     if reservation.status == 'approved':
         return JSONResponse(
             status_code=400,
-            content={
-                'message': 'Already issued'
-            }
+            content={'message': 'Already issued'}
         )
-
-    # Check available copies
-    if book.available_copies <= 0:
-        raise HTTPException(
+    
+    
+    if reservation.status != 'pending':
+        return JSONResponse(
             status_code=400,
-            detail='No copies available'
+            content={'message': 'User must have a pending reservation'}
         )
-
-    # Issue information
+    
+    
+    if book.available_copies <= 0:
+        raise HTTPException(status_code=400, detail='No copies available')
+    
+    
     loan_days = 14
     issue_date = datetime.now()
-
+    
+    
     issue_model = IssueRecords(
         book_id=issue_request.book_id,
         user_id=issue_request.user_id,
@@ -180,24 +162,19 @@ def create_issue(
         due_date=issue_date + timedelta(days=loan_days),
         status='issued'
     )
-
-    # Update reservation
+    
+    
     reservation.status = 'approved'
-
-    # Decrease available copy
     book.available_copies -= 1
-
-    # Save issue record
+    
     db.add(issue_model)
     db.commit()
-
+    
+    
     return JSONResponse(
         status_code=201,
-        content={
-            'message': 'Book issued successfully'
-        }
+        content={'message': 'Book issued successfully'}
     )
-
 @router.put('/admin/return_book/{issue_id}')
 def create_issue(user: user_dependency, db: db_dependency, issue_id : int):
     if user is None or user.get('role') != 'librarian':
