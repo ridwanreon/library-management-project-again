@@ -186,7 +186,7 @@ def create_issue(user: user_dependency, db: db_dependency, issue_id : int):
         raise HTTPException(status_code=404, detail='Book not found')
     
     
-    return_date = datetime.now
+    return_date = datetime.now()
     fine = calculate_fine(return_date,issue.due_date)
     
     
